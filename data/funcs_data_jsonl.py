@@ -30,9 +30,7 @@ def sort_data_jsonl(data_jsonl_path, out_data_jsonl_path):
     id_content_dict = read_data_jsonl(data_jsonl_path)
     write_data_jsonl(id_content_dict, out_data_jsonl_path)
 
-
 def merge_data_jsonl(first_data_jsonl_path, second_data_jsonl_path, out_data_jsonl_path):
-
     id_content_dict = read_data_jsonl(first_data_jsonl_path)
     with open(second_data_jsonl_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -48,9 +46,7 @@ def spilt_data_jsonl(in_data_jsonl_path, out_dir_path, n):
     id_content_dict = read_data_jsonl(in_data_jsonl_path)
     keys = list(id_content_dict.keys())
     length = len(keys)
-
     step = length // n
-
     start_index = 0
     for i in range(n):
         end_index = step + start_index if step + start_index < length else length

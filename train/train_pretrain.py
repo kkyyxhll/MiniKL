@@ -27,6 +27,7 @@ def exp_moving_average(data, alpha=0.9):
         avg = alpha*value + (1-alpha)*output[-1]
         output.append(avg)
     return output
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("MiniKL Pretrain Args")
     parser.add_argument("--epochs", type=int, default=1)

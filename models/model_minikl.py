@@ -4,7 +4,6 @@ import torch.nn.functional as F
 
 import math
 
-
 class  MiniKLConfig:
     def __init__(self,
                  max_seq_len: int = 32 * 1024,  # RoPE预设的最大序列长度

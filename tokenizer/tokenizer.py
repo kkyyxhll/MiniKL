@@ -39,7 +39,6 @@ class TokenizerConfig:
                 raise ValueError("vocab_dict_path is required")
 
         if mode == "train":
-
             if out_dir is None:
                 if data_jsonl_path is None:
                     raise ValueError("while out_dir is None, data_jsonl_path is required")
@@ -57,7 +56,6 @@ class BaseTokenizer:
             self.vocab_dict_path = config.vocab_dict_path
             self._load_vocab_dict()
 
-
         self.data_jsonl_path = config.data_jsonl_path
         self.out_dir = config.out_dir
         self.vocab_size = config.vocab_size
@@ -67,11 +65,9 @@ class BaseTokenizer:
         self.pair_freq_dict = defaultdict(int)
         self.savepoint_epoch = config.savepoint_epoch
         self.special_tokens = config.special_tokens
-
         self.max_seq_len = config.max_seq_len
+
     def train(self,):
-
-
         if self._train_init_out_dir(): # 从out加载
             print("从out_dir中预先加载.......")
             self._train_load_data_jsonl_path(self.out_data_jsonl_path)
@@ -81,7 +77,6 @@ class BaseTokenizer:
             print("开始训练......")
             self._train_load_data_jsonl_path(self.data_jsonl_path)
         self._train_load_vocab_freq_dict()
-
 
         while self.now_vocab_size < self.vocab_size:
             self.now_vocab_size += 1
@@ -113,16 +108,14 @@ class BaseTokenizer:
         # 文本长度
         #length = max_len+2 if max_len+2 < max_seq_len else max_seq_len
         length = max_seq_len
-
         chunks = []
         masks = []
         for seq in seqs:
             temp_chunks, temp_masks = self._chunk(seq, length)
-
             chunks += temp_chunks
             masks += temp_masks
-
         return {"input_ids": chunks, "padding_masks": masks}
+
     def _chunk(self, seq, length):
         length = length - 2 # <bos> <eos>
         chunks = []
@@ -139,7 +132,6 @@ class BaseTokenizer:
         while True:
             end_index, flag = (start_index + length, False) if start_index + length < len(seq) else (len(seq), True)
             temp_pads = [pad_index for _ in range(length - len(seq) + start_index)]
-
             temp_chunks = tuple([bos_index] + seq[start_index:end_index] + [eos_index] + temp_pads)
             chunks.append(temp_chunks)
             temp_masks = tuple([1] * (len(chunks[-1]) - len(temp_pads)) + [0] * len(temp_pads))
@@ -147,17 +139,15 @@ class BaseTokenizer:
             start_index = end_index
             if flag:
                 break
-
         return chunks, masks
+
     def get_special_tokens(self, ):
         return self.special_tokens
-    def tokenize(self, texts:str or list[str]):
-        "token 2 index"
 
+    def tokenize(self, texts:str or list[str]):
         max_token_length = len(self.decode_vocab_dict[0])
         if type(texts) == str:
             texts = [texts]
-
         seqs = []
         max_len = 0
         for text in texts:
@@ -228,7 +218,6 @@ class BaseTokenizer:
             os.mkdir(self.out_dir)
             return False
 
-
     def _train_log(self, log_line):
         with open(self.out_log_path, "a", encoding="utf-8") as f:
             f.write(log_line)
@@ -292,6 +281,7 @@ class BaseTokenizer:
             for token in content:
                 self.vocab_freq_dict[token] += 1
         print(f"vocab_freq_dict加载完成 time:{time.time() - start_time}")
+
     def _train_find_max_pair(self) :
         max_pair_freq = 1
         max_pair = None
@@ -340,12 +330,8 @@ class BaseTokenizer:
         return delete_info
 
 if __name__ == "__main__":
-
-
    data_jsonl_path = "train.jsonl"
    vocab_size = 20000
-
-
    tokenizer = BaseTokenizer(config=TokenizerConfig(mode="test", vocab_dict_path="out_dir/vocab_dict.json"))
    output = tokenizer.pretrain_tokenize(["你好香啊"*1000,
                                         "你怎么这么香啊啊啊啊"])

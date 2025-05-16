@@ -14,6 +14,7 @@ class Logger:
         for root, dirs, files in os.walk(self.out_dir):
             count = len(files)
         return str(count)+".txt"
+
     def write(self, log):
         out_path = os.path.join(self.out_dir, self.out_name)
         with open(out_path, "a", encoding="utf-8") as f:

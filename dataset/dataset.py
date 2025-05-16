@@ -1,14 +1,10 @@
-import os
 
 import json
 
 import torch
-from torch.utils.data import Dataset, DataLoader
-
-from tokenizer import BaseTokenizer, TokenizerConfig
+from torch.utils.data import Dataset
 
 import time
-import random
 
 class PretrainDataset(Dataset):
     def __init__(self,tokenizer, data_jsonl_path):
@@ -46,24 +42,5 @@ class PretrainDataset(Dataset):
         return all_input_ids[0:-1], all_input_ids[1:], all_padding_masks[0:-1]
 
     def __len__(self):
-
         return len(self.dataset)
 
-    # def sample(self, content_size):
-    #     contents = random.sample(self.dataset, content_size)
-    #     all_input_ids = []
-    #     all_padding_masks = []
-    #     for content in contents:
-    #         all_input_ids += content["input_ids"]
-    #         all_padding_masks += content["padding_masks"]
-    #
-    #     return {"input_ids": all_input_ids, "padding_masks": all_padding_masks}
-
-
-
-if __name__ == '__main__':
-    data_jsonl_path = r"C:\Users\kkyyxhll\PycharmProjects\PythonProject\MiniKL\tokenizer\data.jsonl"
-    vocab_dict_json_path = r"C:\Users\kkyyxhll\PycharmProjects\PythonProject\MiniKL\tokenizer\out_dir\vocab_dict.json"
-    dataset = PretrainDataset(data_jsonl_path, vocab_dict_json_path)
-
-    print(dataset.__getitem__(0))
