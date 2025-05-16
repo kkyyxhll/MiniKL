@@ -1,0 +1,7 @@
+*.jsonl
+*.pth
+*.txt
+__pycache__/
+*.pyc
+
+.idea/
