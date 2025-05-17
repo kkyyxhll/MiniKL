@@ -100,7 +100,7 @@ class BaseTokenizer:
 
     def pretrain_tokenize(self, texts):
         max_seq_len = self.max_seq_len
-        seqs, max_len = self.tokenize(texts)
+        seqs= self.tokenize(texts)
         """
             [[a, b, c], [], [], ]
             [[<bos>, a, b, c, <eos>, <pad>, <pad>, <pad>]]
@@ -149,11 +149,11 @@ class BaseTokenizer:
         if type(texts) == str:
             texts = [texts]
         seqs = []
-        max_len = 0
+
         for text in texts:
             i = 0
             seq = []
-            temp_length = 0
+
             while i < len(text):
                 flag = False
                 for length in range(max_token_length, 0, -1):
@@ -163,17 +163,16 @@ class BaseTokenizer:
                             seq.append(self.vocab_dict[chars])
                             flag = True
                             i = i + length
-                            temp_length += 1
+
                             break
                 if not flag:
                     seq.append(self.vocab_dict["<unk>"])
                     i += 1
-                    temp_length += 1
+
 
             seqs.append(seq)
-            if max_len < temp_length:
-                max_len = temp_length
-        return seqs, max_len
+
+        return seqs
 
     def decode(self, seqs:list or list[list]):
         "index 2 token"
