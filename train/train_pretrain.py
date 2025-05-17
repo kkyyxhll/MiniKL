@@ -1,3 +1,7 @@
+import os.path
+
+import warnings
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -29,15 +33,18 @@ def exp_moving_average(data, alpha=0.9):
     return output
 
 if __name__ == "__main__":
+    warnings.filterwarnings('ignore')
+    torch.cuda.empty_cache()  # 释放 PyTorch 缓存的未使用内存
+
     parser = argparse.ArgumentParser("MiniKL Pretrain Args")
-    parser.add_argument("--epochs", type=int, default=1)
+    parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--lr", type=float, default=5e-4)
-    parser.add_argument("--batch_size", type=int, default=12)
+    parser.add_argument("--batch_size", type=int, default=24)
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--max_seq_len", type=int, default=512)
     parser.add_argument("--vocab_dict_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json")
     parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/out/data0.jsonl")
-
+    parser.add_argument("--model_save_path",type=str, default="pretrain_model.pth")
     args = parser.parse_args()
 
     logger = Logger(task_name="pretrain", )
@@ -54,8 +61,10 @@ if __name__ == "__main__":
 
     model_config = MiniKLConfig(vocab_size=vocab_size,)
     model = MiniKLModel(model_config).to(args.device)
-
-    optimizer = optim.AdamW(model.parameters(),)
+    if os.path.exists(args.model_save_path):
+        model.load_state_dict(torch.load(args.model_save_path))
+    optimizer = optim.AdamW(model.parameters(),lr=args.lr)
+    scaler = GradScaler()
     criterion = nn.CrossEntropyLoss(reduction="none")
 
 
@@ -76,16 +85,22 @@ if __name__ == "__main__":
                 optimizer.param_groups[0]["lr"] = lr
 
                 optimizer.zero_grad()
-                pred_y = model(x)
+                with autocast():
 
-                pred_y = pred_y.transpose(-1, -2)
 
-                loss_masked = criterion(pred_y, y) * padding_masks
+                    pred_y = model(x)
 
-                loss = torch.mean(loss_masked)
+                    pred_y = pred_y.transpose(-1, -2)
 
-                loss.backward()
-                optimizer.step()
+                    loss_masked = criterion(pred_y, y) * padding_masks
+    
+                    loss = torch.mean(loss_masked)
+
+                scaler.scale(loss).backward()  # 缩放梯度
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                scaler.step(optimizer)
+                scaler.update()
 
                 all_losses.append(loss.item())
                 pbar.set_postfix(loss=f"{loss.item():.4f}")
@@ -95,8 +110,8 @@ if __name__ == "__main__":
                 logger.write(log)
 
                 if (i+1) % 100 == 0:
-                    torch.save(model.state_dict(), "pretrain_model.pth")
-        torch.save(model.state_dict(), "pretrain_model.pth")
+                    torch.save(model.state_dict(), args.model_save_path)
+        torch.save(model.state_dict(), args.model_save_path)
 
         pbar.update()
 

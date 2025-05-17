@@ -12,7 +12,7 @@ class  MiniKLConfig:
                  num_heads: int = 8,  # attention层头数
                  g: int = 2,  # g=1 MQA 1<g<num_heads GQA g=num_heads MHA
                  ffn: str = "GLU",  # "GLU" | "FFN" FFN为标准Transformer的FFN， GLU为门控线性单元，默认GLU。
-                 num_layers: int = 8,
+                 num_layers: int = 4,
                  flag_kv_cache: bool = False,  # 是否推理
                  vocab_size: int = 5000,
                  ):
@@ -210,5 +210,5 @@ class MiniKLModel(nn.Module):
         for layer in self.layers:
             x = layer(x, masked=masked)
         output = self.fc(x)
-        output = F.softmax(output, dim=-1)
+
         return output

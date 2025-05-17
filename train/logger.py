@@ -19,4 +19,5 @@ class Logger:
         out_path = os.path.join(self.out_dir, self.out_name)
         with open(out_path, "a", encoding="utf-8") as f:
             f.write(log)
+            f.write("\n")
 

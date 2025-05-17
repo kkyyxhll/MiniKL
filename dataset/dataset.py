@@ -39,7 +39,7 @@ class PretrainDataset(Dataset):
         padding_masks = content["padding_masks"]
         all_input_ids = torch.tensor(input_ids, dtype=torch.long)
         all_padding_masks = torch.tensor(padding_masks, dtype=torch.long)
-        return all_input_ids[0:-1], all_input_ids[1:], all_padding_masks[0:-1]
+        return all_input_ids[0:-1], all_input_ids[1:], all_padding_masks[1:]
 
     def __len__(self):
         return len(self.dataset)
