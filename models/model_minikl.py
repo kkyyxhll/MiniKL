@@ -56,7 +56,7 @@ class RoPE(nn.Module):
     def forward(self, x):
         """
         :param x: (batch_size, seq_len, d_model)
-        :return:
+        :return: batch_size, seq_len, d_model/2, 2
         """
         batch_size, seq_len, d_model = x.size()
         assert d_model == self.d_model

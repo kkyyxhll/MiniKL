@@ -28,10 +28,10 @@ if __name__ == "__main__":
     model = MiniKLModel(model_config).to(args.device)
     if os.path.exists(args.model_path):
         model.load_state_dict(torch.load(args.model_path))
-    prompt = "暗红色的血垢，遮住了刀身的寒光，看着并不太"
+    prompt = "你知道我是谁吗"
     resp = ""
     print(f"prompt:{prompt}")
-    for i in range(0, 100):
+    for i in range(0, 1000):
 
         tokens = torch.tensor(tokenizer.tokenize(prompt)).to(args.device)
 
@@ -41,6 +41,7 @@ if __name__ == "__main__":
 
         token = tokenizer.decode([num])[0][0]
         if token == "</s>":
+            print("</s>")
             break
         prompt += token
         resp += token

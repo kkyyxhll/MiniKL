@@ -1,5 +1,7 @@
 import os.path
-
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+print(os.path.dirname(os.path.dirname(__file__)))
 import warnings
 
 import torch
@@ -7,7 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from torch.utils.data import DataLoader
-from torch.cuda.amp import autocast, GradScaler
+
 import argparse
 
 from logger import Logger
@@ -19,6 +21,10 @@ from tqdm import tqdm
 import math
 
 import matplotlib.pyplot as plt
+
+import torch.distributed as dist
+import torch.utils.data.distributed
+
 
 def get_now_lr(total_steps, now_step, lr):
     return lr / 10.0 + 0.5 * lr * (1 + math.cos(math.pi * now_step / total_steps))
@@ -34,22 +40,34 @@ def exp_moving_average(data, alpha=0.9):
 
 if __name__ == "__main__":
     warnings.filterwarnings('ignore')
-    torch.cuda.empty_cache()  # 释放 PyTorch 缓存的未使用内存
+    torch.cuda.empty_cache()
 
     parser = argparse.ArgumentParser("MiniKL Pretrain Args")
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--lr", type=float, default=5e-4)
     parser.add_argument("--batch_size", type=int, default=24)
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--max_seq_len", type=int, default=512)
     parser.add_argument("--vocab_dict_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json")
     parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/out/data0.jsonl")
     parser.add_argument("--model_save_path",type=str, default="pretrain_model.pth")
     args = parser.parse_args()
 
+    device = args.device
+
     logger = Logger(task_name="pretrain", )
 
-    print(f"device: {args.device}")
+
+
+    local_rank = int(os.environ["LOCAL_RANK"])
+    dist.init_process_group(backend="nccl")
+
+    torch.manual_seed(42)
+    if device == "cuda":
+        torch.cuda.manual_seed_all(42)
+
+    device = f"{device}:{local_rank}"
+    print(f"device: {device}, local_rank:{local_rank}")
 
     tokenizer_config = TokenizerConfig(mode="test", vocab_dict_path=args.vocab_dict_path, max_seq_len=args.max_seq_len)
     tokenizer = BaseTokenizer(tokenizer_config)
@@ -57,16 +75,18 @@ if __name__ == "__main__":
     vocab_size = tokenizer.get_vocab_size()
 
     pretrain_dataset = PretrainDataset(tokenizer, args.data_jsonl_path)
-    pretrain_dataloader = DataLoader(pretrain_dataset, batch_size=args.batch_size, shuffle=True)
+    pretrain_sampler = torch.utils.data.distributed.DistributedSampler(pretrain_dataset)
+    pretrain_dataloader = DataLoader(pretrain_dataset, batch_size=args.batch_size, sampler=pretrain_sampler)
 
     model_config = MiniKLConfig(vocab_size=vocab_size,)
     model = MiniKLModel(model_config).to(args.device)
     if os.path.exists(args.model_save_path):
         model.load_state_dict(torch.load(args.model_save_path))
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
     optimizer = optim.AdamW(model.parameters(),lr=args.lr)
-    scaler = GradScaler()
-    criterion = nn.CrossEntropyLoss(reduction="none")
 
+    criterion = nn.CrossEntropyLoss(reduction="none")
+    scaler = torch.amp.GradScaler(device=device.split(":")[0], )
 
 
     per_epoch_steps = len(pretrain_dataloader)
@@ -85,15 +105,10 @@ if __name__ == "__main__":
                 optimizer.param_groups[0]["lr"] = lr
 
                 optimizer.zero_grad()
-                with autocast():
-
-
+                with torch.amp.autocast(device_type=device.split("|")[0], dtype=torch.float16):
                     pred_y = model(x)
-
                     pred_y = pred_y.transpose(-1, -2)
-
                     loss_masked = criterion(pred_y, y) * padding_masks
-    
                     loss = torch.mean(loss_masked)
 
                 scaler.scale(loss).backward()  # 缩放梯度
@@ -104,16 +119,18 @@ if __name__ == "__main__":
 
                 all_losses.append(loss.item())
                 pbar.set_postfix(loss=f"{loss.item():.4f}")
-                pbar.set_description(f"epoch:[{e+1}|{args.epochs}] step:[{i+1}|{per_epoch_steps}] lr:[{lr:.4f}]")
+                pbar.set_description(f"device:{device} epoch:[{e+1}|{args.epochs}] step:[{i+1}|{per_epoch_steps}] lr:[{lr:.4f}]")
 
-                log = f"epoch:[{e + 1}|{args.epochs}], step:[{i+1}|{per_epoch_steps}], lr:[{lr:.4f}], loss:{loss.item():.4f}"
+                log = f"device:{device}  epoch:[{e + 1}|{args.epochs}], step:[{i+1}|{per_epoch_steps}], lr:[{lr:.4f}], loss:{loss.item():.4f}"
                 logger.write(log)
 
                 if (i+1) % 100 == 0:
-                    torch.save(model.state_dict(), args.model_save_path)
-        torch.save(model.state_dict(), args.model_save_path)
-
+                    if dist.get_rank() == 0:
+                        torch.save(model.state_dict(), args.model_save_path)
         pbar.update()
+
+    if dist.get_rank() == 0:
+        torch.save(model.state_dict(), args.model_save_path)
 
     x = [e for e in range(all_steps)]
     all_losses = exp_moving_average(all_losses)
@@ -122,5 +139,5 @@ if __name__ == "__main__":
     plt.title("loss | epoch")
     plt.xlabel("epoch")
     plt.ylabel("loss")
-    plt.show()
+    plt.savefig("loss.png")
 
