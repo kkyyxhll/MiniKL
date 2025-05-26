@@ -2,6 +2,7 @@
 *.pth
 *.txt
 __pycache__/
+wandb/
 *.pyc
 
 .idea/
