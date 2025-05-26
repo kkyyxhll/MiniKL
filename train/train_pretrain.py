@@ -49,28 +49,28 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--max_seq_len", type=int, default=512)
     parser.add_argument("--vocab_dict_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json")
-    parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/out/data0.jsonl")
+    parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/train.jsonl")
     parser.add_argument("--model_save_path",type=str, default="pretrain_model.pth")
     args = parser.parse_args()
 
-    device = args.device
+
 
     logger = Logger(task_name="pretrain", )
 
 
-
-    local_rank = int(os.environ["LOCAL_RANK"])
-    dist.init_process_group(backend="nccl")
-
     torch.manual_seed(42)
-    if device == "cuda":
+    if args.device == "cuda":
         torch.cuda.manual_seed_all(42)
 
-    device = f"{device}:{local_rank}"
-    print(f"device: {device}, local_rank:{local_rank}")
+
 
     tokenizer_config = TokenizerConfig(mode="test", vocab_dict_path=args.vocab_dict_path, max_seq_len=args.max_seq_len)
     tokenizer = BaseTokenizer(tokenizer_config)
+
+    local_rank = int(os.environ["LOCAL_RANK"])
+    dist.init_process_group(backend="nccl")
+    args.device = f"cuda:{local_rank}"
+    print(f"device: {args.device}, local_rank:{local_rank}")
 
     vocab_size = tokenizer.get_vocab_size()
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     optimizer = optim.AdamW(model.parameters(),lr=args.lr)
 
     criterion = nn.CrossEntropyLoss(reduction="none")
-    scaler = torch.amp.GradScaler(device=device.split(":")[0], )
+    scaler = torch.amp.GradScaler(device=args.device.split(":")[0], )
 
 
     per_epoch_steps = len(pretrain_dataloader)
@@ -105,7 +105,7 @@ if __name__ == "__main__":
                 optimizer.param_groups[0]["lr"] = lr
 
                 optimizer.zero_grad()
-                with torch.amp.autocast(device_type=device.split("|")[0], dtype=torch.float16):
+                with torch.amp.autocast(device_type=args.device.split(":")[0], dtype=torch.float16):
                     pred_y = model(x)
                     pred_y = pred_y.transpose(-1, -2)
                     loss_masked = criterion(pred_y, y) * padding_masks
@@ -119,9 +119,9 @@ if __name__ == "__main__":
 
                 all_losses.append(loss.item())
                 pbar.set_postfix(loss=f"{loss.item():.4f}")
-                pbar.set_description(f"device:{device} epoch:[{e+1}|{args.epochs}] step:[{i+1}|{per_epoch_steps}] lr:[{lr:.4f}]")
+                pbar.set_description(f"device:{args.device} epoch:[{e+1}|{args.epochs}] step:[{i+1}|{per_epoch_steps}] lr:[{lr:.4f}]")
 
-                log = f"device:{device}  epoch:[{e + 1}|{args.epochs}], step:[{i+1}|{per_epoch_steps}], lr:[{lr:.4f}], loss:{loss.item():.4f}"
+                log = f"device:{args.device}  epoch:[{e + 1}|{args.epochs}], step:[{i+1}|{per_epoch_steps}], lr:[{lr:.4f}], loss:{loss.item():.4f}"
                 logger.write(log)
 
                 if (i+1) % 100 == 0:
