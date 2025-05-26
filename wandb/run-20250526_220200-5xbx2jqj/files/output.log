@@ -1,3 +1,0 @@
-开始载入数据集,path:/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/out/data0.jsonl
-数据集载入完成,time:5.771146774291992
-device:cuda:0 epoch:[1|1] step:[5|526] lr:[0.0005]:   1%|█                                                                                                                 | 5/526 [00:07<12:44,  1.47s/train, loss=5.7492]

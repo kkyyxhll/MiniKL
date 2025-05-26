@@ -1,7 +1,0 @@
-{"time":"2025-05-26T22:07:31.841153275+08:00","level":"INFO","msg":"stream: starting","core version":"0.19.11","symlink path":"/home/kkyyxhll/Projects/PythonProjects/MiniKL/wandb/run-20250526_220731-gqb9ccsz/logs/debug-core.log"}
-{"time":"2025-05-26T22:07:32.670395162+08:00","level":"INFO","msg":"created new stream","id":"gqb9ccsz"}
-{"time":"2025-05-26T22:07:32.670438173+08:00","level":"INFO","msg":"stream: started","id":"gqb9ccsz"}
-{"time":"2025-05-26T22:07:32.670483558+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"gqb9ccsz"}
-{"time":"2025-05-26T22:07:32.670521169+08:00","level":"INFO","msg":"handler: started","stream_id":"gqb9ccsz"}
-{"time":"2025-05-26T22:07:32.67061665+08:00","level":"INFO","msg":"sender: started","stream_id":"gqb9ccsz"}
-{"time":"2025-05-26T22:07:33.204764174+08:00","level":"INFO","msg":"Starting system monitor"}
