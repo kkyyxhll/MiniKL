@@ -1,0 +1,15 @@
+{"time":"2025-05-26T22:00:27.781848346+08:00","level":"INFO","msg":"stream: starting","core version":"0.19.11","symlink path":"/home/kkyyxhll/Projects/PythonProjects/MiniKL/wandb/run-20250526_220027-2xi17c3u/logs/debug-core.log"}
+{"time":"2025-05-26T22:00:28.787120894+08:00","level":"INFO","msg":"created new stream","id":"2xi17c3u"}
+{"time":"2025-05-26T22:00:28.787162794+08:00","level":"INFO","msg":"stream: started","id":"2xi17c3u"}
+{"time":"2025-05-26T22:00:28.787178994+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"2xi17c3u"}
+{"time":"2025-05-26T22:00:28.787178774+08:00","level":"INFO","msg":"sender: started","stream_id":"2xi17c3u"}
+{"time":"2025-05-26T22:00:28.78724506+08:00","level":"INFO","msg":"handler: started","stream_id":"2xi17c3u"}
+{"time":"2025-05-26T22:00:29.326678867+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-26T22:00:36.125984844+08:00","level":"INFO","msg":"stream: closing","id":"2xi17c3u"}
+{"time":"2025-05-26T22:00:36.126034287+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-26T22:00:36.126077349+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-26T22:00:37.919357035+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-05-26T22:00:38.899335941+08:00","level":"INFO","msg":"handler: closed","stream_id":"2xi17c3u"}
+{"time":"2025-05-26T22:00:38.899431893+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"2xi17c3u"}
+{"time":"2025-05-26T22:00:38.899444066+08:00","level":"INFO","msg":"sender: closed","stream_id":"2xi17c3u"}
+{"time":"2025-05-26T22:00:38.899617164+08:00","level":"INFO","msg":"stream: closed","id":"2xi17c3u"}

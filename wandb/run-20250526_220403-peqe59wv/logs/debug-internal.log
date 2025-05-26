@@ -1,0 +1,10 @@
+{"time":"2025-05-26T22:04:03.212952674+08:00","level":"INFO","msg":"stream: starting","core version":"0.19.11","symlink path":"/home/kkyyxhll/Projects/PythonProjects/MiniKL/wandb/run-20250526_220403-peqe59wv/logs/debug-core.log"}
+{"time":"2025-05-26T22:04:04.244838003+08:00","level":"INFO","msg":"created new stream","id":"peqe59wv"}
+{"time":"2025-05-26T22:04:04.24487344+08:00","level":"INFO","msg":"stream: started","id":"peqe59wv"}
+{"time":"2025-05-26T22:04:04.244923495+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"peqe59wv"}
+{"time":"2025-05-26T22:04:04.24497881+08:00","level":"INFO","msg":"handler: started","stream_id":"peqe59wv"}
+{"time":"2025-05-26T22:04:04.24499461+08:00","level":"INFO","msg":"sender: started","stream_id":"peqe59wv"}
+{"time":"2025-05-26T22:04:04.755272942+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-26T22:05:33.795749134+08:00","level":"INFO","msg":"stream: closing","id":"peqe59wv"}
+{"time":"2025-05-26T22:05:33.795793498+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-26T22:05:33.795843994+08:00","level":"INFO","msg":"Stopped system monitor"}

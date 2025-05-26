@@ -1,0 +1,42 @@
+{
+  "os": "Linux-6.8.0-59-generic-x86_64-with-glibc2.35",
+  "python": "CPython 3.10.16",
+  "startedAt": "2025-05-26T13:51:03.312203Z",
+  "program": "/home/kkyyxhll/Projects/PythonProjects/MiniKL/train/train_pretrain.py",
+  "codePath": "train/train_pretrain.py",
+  "git": {
+    "remote": "git@github.com:kkyyxhll/MiniKL.git",
+    "commit": "5ced02179a981334de19784429b500bb142a5e7c"
+  },
+  "email": "2243036632@qq.com",
+  "root": "/home/kkyyxhll/Projects/PythonProjects/MiniKL",
+  "host": "pc",
+  "executable": "/home/kkyyxhll/anaconda3/envs/dist_test/bin/python",
+  "codePathLocal": "train/train_pretrain.py",
+  "cpu_count": 8,
+  "cpu_count_logical": 16,
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "210241560576",
+      "used": "164210982912"
+    }
+  },
+  "memory": {
+    "total": "15966461952"
+  },
+  "cpu": {
+    "count": 8,
+    "countLogical": 16
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 3060 Laptop GPU",
+      "memoryTotal": "6442450944",
+      "cudaCores": 3840,
+      "architecture": "Ampere"
+    }
+  ],
+  "cudaVersion": "12.2"
+}
