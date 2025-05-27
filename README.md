@@ -2,6 +2,10 @@
 `tokenizer`, `model`, `data`都由`PyTorch`从零实现，不包含其他库，如`transformers`,`deepspeed`。  
 支持混合精度训练、 分布式数据并行。   
 
+## 依赖包安装
+```commandline
+pip install -r requirements.txt
+```
 ## 预训练脚本
 预训练需要提供词表(JSON文件)和预训练数据集(JSONL文件)。
 提供测试的放在 https://www.modelscope.cn/datasets/kkyyxhll/MiniKL-dataset/files 中。
