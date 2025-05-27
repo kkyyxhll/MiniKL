@@ -75,7 +75,7 @@ if __name__ == "__main__":
     if local_rank == 0 and args.use_wandb:
         run = wandb.init(entity=args.wandb_entity,
                          # Set the wandb project where this run will be logged.
-                         project=args.project,
+                         project=args.wandb_project,
                          # Track hyperparameters and run metadata.
                          config={
                              "learning_rate": args.lr,
@@ -161,4 +161,3 @@ if __name__ == "__main__":
     plt.xlabel("epoch")
     plt.ylabel("loss")
     plt.savefig("loss.png")
-

@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_seq_len", type=int, default=512)
     parser.add_argument("--vocab_dict_path", type=str, default=r'/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json')
     parser.add_argument("--model_path", type=str, default=r'/home/kkyyxhll/Projects/PythonProjects/MiniKL/train/pretrain_model.pth')
-
+    parser.add_argument("--prompt", type=str, default="一生一代一双人，")
     args = parser.parse_args()
 
     tokenizer_config = TokenizerConfig(mode="test", vocab_dict_path=args.vocab_dict_path, max_seq_len=args.max_seq_len)
@@ -28,10 +28,10 @@ if __name__ == "__main__":
     model = MiniKLModel(model_config).to(args.device)
     if os.path.exists(args.model_path):
         model.load_state_dict(torch.load(args.model_path))
-    prompt = "你知道我是谁吗"
+    prompt = args.prompt
     resp = ""
     print(f"prompt:{prompt}")
-    for i in range(0, 1000):
+    for i in range(0, 100):
 
         tokens = torch.tensor(tokenizer.tokenize(prompt)).to(args.device)
 

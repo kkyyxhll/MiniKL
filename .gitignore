@@ -1,8 +1,10 @@
 *.jsonl
 *.pth
 *.txt
-__pycache__/
-wandb/
 *.pyc
 
+__pycache__/
+wandb/
 .idea/
+
+

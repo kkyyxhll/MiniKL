@@ -19,8 +19,7 @@
 ```
 如果要使用`wandb`监控，命令例子如下，具体参见 https://wandb.ai/site :  
 ```commandline
-torchrun --nnodes=1 --nproc-per-node=1 train/train_pretrain.py --use_wandb --wandb_enti
-ty=loukang wandb_project=test  --vocab_dict_path="/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json"
+torchrun --nnodes=1 --nproc-per-node=1 train/train_pretrain.py --use_wandb --wandb_entity=loukang --wandb_project=test  --vocab_dict_path="/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json"
  --data_jsonl_path=/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/out/data0.jsonl
 ```
 `wandb_entity`和`wandb_project`对应
@@ -40,4 +39,14 @@ run = wandb.init(entity=args.wandb_entity,
 单机多卡， 同单机单卡，只是`nproc-per-node` 不同。
 ```commandline
  torchrun --nnodes=1 --nproc-per-node=n train/train_pretrain.py 
+```
+
+## 测试脚本
+- vocab_dict_path: 对应词表json文件路径，如`/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json`
+- model_path: 对应预训练模型路径，如`/home/kkyyxhll/Projects/PythonProjects/MiniKL/pretrain_model.pth`
+- prompt: 对应用户输入
+下面是一个例子
+```commandline
+python test.py --vocab_dict_path=/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json 
+--model_path=/home/kkyyxhll/Projects/PythonProjects/MiniKL/pretrain_model.pth --prompt="一生一代一双人,"
 ```
