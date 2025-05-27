@@ -2,6 +2,7 @@
 *.pth
 *.txt
 *.pyc
+!requirements.txt
 
 __pycache__/
 wandb/
