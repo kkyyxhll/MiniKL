@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 import math
 
-class  MiniKLConfig:
+class MiniKLConfig:
     def __init__(self,
                  max_seq_len: int = 32 * 1024,  # RoPE预设的最大序列长度
                  d_model: int = 512,  # 模型隐层维度
@@ -12,7 +12,7 @@ class  MiniKLConfig:
                  num_heads: int = 8,  # attention层头数
                  g: int = 2,  # g=1 MQA 1<g<num_heads GQA g=num_heads MHA
                  ffn: str = "GLU",  # "GLU" | "FFN" FFN为标准Transformer的FFN， GLU为门控线性单元，默认GLU。
-                 num_layers: int = 4,
+                 num_layers: int = 10,
                  flag_kv_cache: bool = False,  # 是否推理
                  vocab_size: int = 5000,
                  ):
@@ -58,10 +58,8 @@ class RoPE(nn.Module):
         :param x: (batch_size, seq_len, d_model)
         :return: batch_size, seq_len, d_model/2, 2
         """
-        batch_size, seq_len, d_model = x.size()
-        assert d_model == self.d_model
-        assert seq_len < self.max_seq_len
 
+        seq_len  = x.size(-2)
         cos_x = x
         sin_x = torch.stack([-x[..., 1::2], x[..., 0::2]], dim=-1).flatten(-2)
         return cos_x * self.rope_cos[:seq_len, :] + sin_x * self.rope_sin[:seq_len, :]
@@ -88,18 +86,27 @@ class Attention(nn.Module):
         :param masked: torch.triu(torch.ones_like(torch.rand(batch_size*num_heads, seq_len, seq_len)), diagonal=1).bool()
         :return:
         """
-        q = self._mapper(self.w_q(x), g=self.num_heads)
-        k = self._mapper(self.w_k(x), g=self.g)
-        v = self._mapper(self.w_v(x), g=self.g)
+        # q = self._mapper(self.w_q(x), g=self.num_heads)
+        # k = self._mapper(self.w_k(x), g=self.g)
+        # v = self._mapper(self.w_v(x), g=self.g)
+        #
+        # q = self.rope(q)
+        # k = self.rope(k)
+        #
+        #
+        #
+        # attention_score = q @ k.transpose(-2, -1)
+        # if masked is not None:
+        #     attention_score.masked_fill_(masked, float("-inf"))
+        # attention = F.softmax(attention_score / math.sqrt(self.d_head), dim=-1) @ v
+        # attention = self._reduce(attention)
+        q = self.w_q(x).unflatten(-1, [self.num_heads, self.d_head]).transpose(1, 2)
+        k = self.w_k(x).unflatten(-1, [self.g, self.d_head]).transpose(1, 2).repeat_interleave(self.num_heads//self.g, 1)
+        v = self.w_v(x).unflatten(-1, [self.g, self.d_head]).transpose(1, 2).repeat_interleave(self.num_heads//self.g, 1)
 
-        q = self.rope(q)
-        k = self.rope(k)
 
-        attention_score = q @ k.transpose(-2, -1)
-        if masked is not None:
-            attention_score[masked] = -float('inf')
-        attention = F.softmax(attention_score / math.sqrt(self.d_head), dim=-1) @ v
-        attention = self._reduce(attention)
+        attention = F.scaled_dot_product_attention(q, k, v, is_causal=True).transpose(1, 2).flatten(-2, -1)
+
         attention = self.w_o(attention)
         return attention
 
@@ -110,7 +117,7 @@ class Attention(nn.Module):
         """
         batch_size, seq_len, _ = x.size()
         x = x.reshape(batch_size, seq_len, g, self.d_head)
-        x = x.permute(0, 2, 1, 3).reshape(batch_size * g, seq_len, self.d_head)
+        x = x.permute(0, 2, 1, 3).reshape(batch_size*g, seq_len, self.d_head)
         x = x.repeat_interleave(self.num_heads // g, dim=0)
         return x
 
@@ -204,9 +211,9 @@ class MiniKLModel(nn.Module):
         """
         if x.dim() == 1:
             x = x.unsqueeze(0)
-        batch_size, seq_len,  = x.size()
+
         x = self.embeddings(x)
-        masked = torch.triu(torch.ones(batch_size * self.num_heads, seq_len, seq_len), diagonal=1).bool()
+        masked = torch.triu(torch.ones(x.size(1), x.size(1)), diagonal=1).bool().to(x.device)
         for layer in self.layers:
             x = layer(x, masked=masked)
         output = self.fc(x)

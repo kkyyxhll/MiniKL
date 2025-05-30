@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_seq_len", type=int, default=512)
     parser.add_argument("--vocab_dict_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json")
     parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/out/data0.jsonl")
-    parser.add_argument("--model_save_path",type=str, default="pretrain_model.pth")
+    parser.add_argument("--model_save_path",type=str, default="/home/kkyyxhll/Projects/PythonProjects/MiniKL/pretrain_model.pth")
     parser.add_argument("--use_wandb", action="store_true")
     parser.add_argument("--wandb_entity", type=str, default="loukang")
     parser.add_argument("--wandb_project", type=str, default="test")
@@ -70,8 +70,7 @@ if __name__ == "__main__":
     local_rank = int(os.environ["LOCAL_RANK"])
     dist.init_process_group(backend="nccl")
     args.device = f"cuda:{local_rank}"
-    print(f"device: {args.device}, local_rank:{local_rank}")
-
+    print(args)
     if local_rank == 0 and args.use_wandb:
         run = wandb.init(entity=args.wandb_entity,
                          # Set the wandb project where this run will be logged.
