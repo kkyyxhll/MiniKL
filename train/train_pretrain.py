@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_seq_len", type=int, default=512)
     parser.add_argument("--vocab_dict_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json")
     parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/out/data0.jsonl")
-    parser.add_argument("--model_save_path",type=str, default="/home/kkyyxhll/Projects/PythonProjects/MiniKL/pretrain_model.pth")
+    parser.add_argument("--model_save_dir", default="saved_pretrain_model", type=str)
     parser.add_argument("--use_wandb", action="store_true")
     parser.add_argument("--wandb_entity", type=str, default="loukang")
     parser.add_argument("--wandb_project", type=str, default="test")
@@ -141,17 +141,27 @@ if __name__ == "__main__":
                         run.log({"epoch": e+1,
                                  "step": i+1,
                                  "loss":loss.item()})
-                if (i+1) % 100 == 0:
+                if (i + 1) % 1000 == 0:
                     if dist.get_rank() == 0:
                         if isinstance(model, torch.nn.parallel.DistributedDataParallel):
                             state_dict = model.module.state_dict()
-                        else :
+                        else:
                             state_dict = model.state_dict()
-                        torch.save(state_dict, args.model_save_path)
+                        model_save_path = os.path.join(args.model_save_dir, f"sft_model_{e * per_epoch_steps + i}.pth")
+                        torch.save(state_dict, model_save_path)
         pbar.update()
 
     if args.use_wandb:
         run.finish()
+
+    if (i + 1) % 1000 == 0:
+        if dist.get_rank() == 0:
+            if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+                state_dict = model.module.state_dict()
+            else:
+                state_dict = model.state_dict()
+            model_save_path = os.path.join(args.model_save_dir, f"pretrain_model.pth")
+            torch.save(state_dict, model_save_path)
     x = [e for e in range(all_steps)]
     all_losses = exp_moving_average(all_losses)
     plt.figure()
@@ -159,4 +169,6 @@ if __name__ == "__main__":
     plt.title("loss | epoch")
     plt.xlabel("epoch")
     plt.ylabel("loss")
-    plt.savefig("loss.png")
+    if not os.path.exists("loss_pngs"):
+        os.mkdir("loss_pngs")
+    plt.savefig(os.path.join("loss_pngs", "sft_loss.png"))

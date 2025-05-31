@@ -7,8 +7,8 @@ import json
 from collections import defaultdict
 class TokenizerConfig:
     def __init__(self,
-                 mode = "train",
-                 vocab_dict_path:str = None,  #预训练的vocab_dict_path[json文件] key:vocab, value:seq
+                 vocab_dict_path: str = None, #预训练的vocab_dict_path[json文件] key:vocab, value:seq
+                 mode = "test",
                  data_jsonl_path: str = None, #训练数据[jsonl]文件
                  out_dir: str = None,         #训练过程输出的checkpoint 下面包括vocab_dict(json), vocab_freq_dict(json), log(txt), data(jsonl)
                  vocab_size: int = 20000,
@@ -145,7 +145,8 @@ class BaseTokenizer:
         return self.special_tokens
 
     def tokenize(self, texts:str or list[str]):
-        max_token_length = len(self.decode_vocab_dict[0])
+        max_token_length = max([len(self.decode_vocab_dict[key]) for key in self.decode_vocab_dict.keys()])
+
         if type(texts) == str:
             texts = [texts]
         seqs = []
