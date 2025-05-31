@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--max_seq_len", type=int, default=512)
     parser.add_argument("--vocab_dict_path", type=str, default=r'/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json')
-    parser.add_argument("--model_path", type=str, default=r'/home/kkyyxhll/Projects/PythonProjects/MiniKL/pretrain_model.pth')
+    parser.add_argument("--model_path", type=str, default=r'/home/kkyyxhll/Projects/PythonProjects/MiniKL/saved_sft_model/sft_model.pth')
     parser.add_argument("--prompt", type=str, default="谈谈大数据对未来的影响。")
     args = parser.parse_args()
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     resp = ""
     print(f"prompt:{prompt}")
     prompt = "<s>" + prompt
-    for i in range(0, 1000):
+    for i in range(0, 100):
 
         tokens = torch.tensor(tokenizer.tokenize(prompt)).to(args.device)
 

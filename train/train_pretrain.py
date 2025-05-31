@@ -3,7 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 print(os.path.dirname(os.path.dirname(__file__)))
 import warnings
-
+import shutil
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -51,9 +51,10 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--max_seq_len", type=int, default=512)
     parser.add_argument("--vocab_dict_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json")
-    parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/out/data0.jsonl")
+    parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/test_pretrain.jsonl")
     parser.add_argument("--model_save_dir", default="saved_pretrain_model", type=str)
-    parser.add_argument("--use_wandb", action="store_true")
+    parser.add_argument("--load_model_path", default="pretrain_model.pth", type=str)
+    parser.add_argument("--wandb", action="store_true")
     parser.add_argument("--wandb_entity", type=str, default="loukang")
     parser.add_argument("--wandb_project", type=str, default="test")
     args = parser.parse_args()
@@ -70,8 +71,11 @@ if __name__ == "__main__":
     local_rank = int(os.environ["LOCAL_RANK"])
     dist.init_process_group(backend="nccl")
     args.device = f"cuda:{local_rank}"
+    if os.path.exists(args.model_save_dir):
+        shutil.rmtree(args.model_save_dir)
+    os.mkdir(args.model_save_dir)
     print(args)
-    if local_rank == 0 and args.use_wandb:
+    if local_rank == 0 and args.wandb:
         run = wandb.init(entity=args.wandb_entity,
                          # Set the wandb project where this run will be logged.
                          project=args.wandb_project,
@@ -92,9 +96,9 @@ if __name__ == "__main__":
 
     model_config = MiniKLConfig(vocab_size=vocab_size,)
     model = MiniKLModel(model_config).to(args.device)
-    if os.path.exists(args.model_save_path):
-        print(f"载入预训练模型:{args.model_save_path}")
-        model.load_state_dict(torch.load(args.model_save_path))
+    if os.path.exists(args.load_model_path):
+        print(f"载入预训练模型:{args.load_model_path}")
+        model.load_state_dict(torch.load(args.load_model_path))
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
     optimizer = optim.AdamW(model.parameters(),lr=args.lr)
 
@@ -136,7 +140,7 @@ if __name__ == "__main__":
 
                 log = f"device:{args.device}  epoch:[{e + 1}|{args.epochs}], step:[{i+1}|{per_epoch_steps}], lr:[{lr:.4f}], loss:{loss.item():.4f}"
                 logger.write(log)
-                if args.use_wandb:
+                if args.wandb:
                     if dist.get_rank() == 0:
                         run.log({"epoch": e+1,
                                  "step": i+1,
@@ -151,17 +155,14 @@ if __name__ == "__main__":
                         torch.save(state_dict, model_save_path)
         pbar.update()
 
-    if args.use_wandb:
-        run.finish()
-
-    if (i + 1) % 1000 == 0:
-        if dist.get_rank() == 0:
-            if isinstance(model, torch.nn.parallel.DistributedDataParallel):
-                state_dict = model.module.state_dict()
-            else:
-                state_dict = model.state_dict()
-            model_save_path = os.path.join(args.model_save_dir, f"pretrain_model.pth")
-            torch.save(state_dict, model_save_path)
+    if dist.get_rank() == 0:
+        if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+            state_dict = model.module.state_dict()
+        else:
+            state_dict = model.state_dict()
+        model_save_path = os.path.join(args.model_save_dir, f"pretrain_model.pth")
+        print(f"model saved {model_save_path}")
+        torch.save(state_dict, model_save_path)
     x = [e for e in range(all_steps)]
     all_losses = exp_moving_average(all_losses)
     plt.figure()
@@ -172,3 +173,9 @@ if __name__ == "__main__":
     if not os.path.exists("loss_pngs"):
         os.mkdir("loss_pngs")
     plt.savefig(os.path.join("loss_pngs", "sft_loss.png"))
+
+    if args.wandb:
+        run.finish()
+
+
+

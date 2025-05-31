@@ -41,7 +41,7 @@ if __name__ == "__main__":
     warnings.filterwarnings('ignore')
 
     parser = argparse.ArgumentParser("Pretrain Arguments")
-    parser.add_argument("--epochs", default=10, type=int)
+    parser.add_argument("--epochs", default=1, type=int)
     parser.add_argument("--batch_size", default=16, type=str)
     parser.add_argument("--lr", default=5e-7, type=float)
     parser.add_argument("--wandb", action="store_true")
@@ -49,6 +49,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_jsonl_path",default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/test_sft.jsonl",  type=str)
     parser.add_argument("--vocab_dict_path", default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json", type=str)
     parser.add_argument("--model_save_dir", default="saved_sft_model", type=str)
+    parser.add_argument("--load_model_path", default="pretrain_model.pth", type=str)
     parser.add_argument("--wandb_entity", default="loukang", type=str)
     parser.add_argument("--wandb_project", default="test", type=str)
     args = parser.parse_args()
@@ -93,8 +94,8 @@ if __name__ == "__main__":
     model = MiniKLModel(model_config).to(device)
     if os.path.exists(args.pretrain_model_path):
         print(f"Loading Pretrain Model .......")
-        print(f"Pretrain_model_path:{args.pretrain_model_path}")
-        model.load_state_dict(torch.load(args.pretrain_model_path))
+        print(f"Pretrain_model_path:{args.load_model_path}")
+        model.load_state_dict(torch.load(args.load_model_path))
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
 
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)
@@ -149,8 +150,7 @@ if __name__ == "__main__":
                         model_save_path = os.path.join(args.model_save_dir, f"sft_model_{e*per_epoch_step+i}.pth")
                         torch.save(state_dict, model_save_path)
         pbar.update()
-    if args.wandb:
-        run.finish()
+
 
     if dist.get_rank() == 0:
         if isinstance(model, torch.nn.parallel.DistributedDataParallel):
@@ -158,6 +158,7 @@ if __name__ == "__main__":
         else:
             state_dict = model.state_dict()
         model_save_path = os.path.join(args.model_save_dir, f"sft_model.pth")
+        print(f"model saved {model_save_path}")
         torch.save(state_dict, model_save_path)
 
     x = [e for e in range(all_step)]
@@ -173,7 +174,8 @@ if __name__ == "__main__":
     plt.savefig(os.path.join("loss_pngs", "sft_loss.png"))
 
 
-
+    if args.wandb:
+        run.finish()
 
 
 
