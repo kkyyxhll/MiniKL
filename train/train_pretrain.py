@@ -51,7 +51,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--max_seq_len", type=int, default=512)
     parser.add_argument("--vocab_dict_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json")
-    parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/test_pretrain.jsonl")
+    parser.add_argument("--data_jsonl_path", type=str, default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/minimind_out/data0.jsonl")
     parser.add_argument("--model_save_dir", default="saved_pretrain_model", type=str)
     parser.add_argument("--load_model_path", default="pretrain_model.pth", type=str)
     parser.add_argument("--wandb", action="store_true")
@@ -104,7 +104,6 @@ if __name__ == "__main__":
 
     criterion = nn.CrossEntropyLoss(reduction="none")
     scaler = torch.amp.GradScaler(device=args.device.split(":")[0], )
-
 
     per_epoch_steps = len(pretrain_dataloader)
     all_steps = args.epochs * per_epoch_steps
@@ -174,7 +173,7 @@ if __name__ == "__main__":
         os.mkdir("loss_pngs")
     plt.savefig(os.path.join("loss_pngs", "sft_loss.png"))
 
-    if args.wandb:
+    if local_rank == 0 and args.wandb:
         run.finish()
 
 

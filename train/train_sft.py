@@ -173,8 +173,7 @@ if __name__ == "__main__":
         os.mkdir("loss_pngs")
     plt.savefig(os.path.join("loss_pngs", "sft_loss.png"))
 
-
-    if args.wandb:
+    if local_rank == 0 and args.wandb:
         run.finish()
 
 
