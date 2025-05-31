@@ -1,0 +1,8 @@
+{"time":"2025-05-31T15:28:25.709416945+08:00","level":"INFO","msg":"stream: starting","core version":"0.19.11","symlink path":"/root/MiniKL/wandb/offline-run-20250531_152825-jkrmgani/logs/debug-core.log"}
+{"time":"2025-05-31T15:28:25.919420706+08:00","level":"WARN","msg":"GraphQL client is nil, skipping feature loading"}
+{"time":"2025-05-31T15:28:25.919556789+08:00","level":"INFO","msg":"created new stream","id":"jkrmgani"}
+{"time":"2025-05-31T15:28:25.919593725+08:00","level":"INFO","msg":"stream: started","id":"jkrmgani"}
+{"time":"2025-05-31T15:28:25.919629695+08:00","level":"INFO","msg":"handler: started","stream_id":"jkrmgani"}
+{"time":"2025-05-31T15:28:25.919659289+08:00","level":"INFO","msg":"sender: started","stream_id":"jkrmgani"}
+{"time":"2025-05-31T15:28:25.919671063+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"jkrmgani"}
+{"time":"2025-05-31T15:28:25.926855045+08:00","level":"INFO","msg":"Starting system monitor"}
