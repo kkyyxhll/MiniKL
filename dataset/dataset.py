@@ -76,7 +76,9 @@ class SFTDataset(Dataset):
                         role = conversation["role"]
                         content = conversation["content"]
                         prompt += f"<|{role}|>{content}</s>\n"
+
                     tokens = self.tokenizer.tokenize(prompt)[0]
+
                     if len(tokens) >= self.tokenizer.max_seq_len:
                         continue
                     masks = []
@@ -118,11 +120,22 @@ class DPODataset(Dataset):
     def __len__(self):
         pass 
 
-
-if __name__ == "__main__":
-
+def test_sft():
     from tokenizer import BaseTokenizer, TokenizerConfig
     vocab_dict_path = "/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json"
     tokenizer = BaseTokenizer(TokenizerConfig(vocab_dict_path))
-    dataset = SFTDataset(tokenizer,)
+    dataset = SFTDataset(tokenizer, )
+    print(dataset.__getitem__(0))
+
+def pretrain():
+    from tokenizer import BaseTokenizer, TokenizerConfig
+    vocab_dict_path = "/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json"
+    tokenizer = BaseTokenizer(TokenizerConfig(vocab_dict_path))
+    text = "<s>鉴别一组中文文章的风格和特点，例如官方、口语、文言等。需要提供样例文章才能准确鉴别不同的风格和特点。</s> <s>好的，现在帮我查一下今天的天气怎么样?今天的天气依据地区而异。请问你需要我帮你查询哪个地区的天气呢？</s>"
+    output = tokenizer.pretrain_tokenize(text)
+
+
+if __name__ == "__main__":
+    pretrain()
+
 

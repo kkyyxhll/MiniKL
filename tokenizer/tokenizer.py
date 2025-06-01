@@ -117,7 +117,7 @@ class BaseTokenizer:
         return {"input_ids": chunks, "padding_masks": masks}
 
     def _chunk(self, seq, length):
-        length = length - 2 # <bos> <eos>
+
         chunks = []
         masks = []
         start_index = 0
@@ -132,7 +132,7 @@ class BaseTokenizer:
         while True:
             end_index, flag = (start_index + length, False) if start_index + length < len(seq) else (len(seq), True)
             temp_pads = [pad_index for _ in range(length - len(seq) + start_index)]
-            temp_chunks = tuple([bos_index] + seq[start_index:end_index] + [eos_index] + temp_pads)
+            temp_chunks = tuple(seq[start_index:end_index] + temp_pads)
             chunks.append(temp_chunks)
             temp_masks = tuple([1] * (len(chunks[-1]) - len(temp_pads)) + [0] * len(temp_pads))
             masks.append(temp_masks)

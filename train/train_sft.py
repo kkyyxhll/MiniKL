@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 import shutil
 
 from models import MiniKLModel, MiniKLConfig
-from dataset import SFTDataset
+from dataset import SFTDataset, PretrainDataset
 from tokenizer import BaseTokenizer, TokenizerConfig
 
 import warnings
@@ -41,15 +41,15 @@ if __name__ == "__main__":
     warnings.filterwarnings('ignore')
 
     parser = argparse.ArgumentParser("Pretrain Arguments")
-    parser.add_argument("--epochs", default=1, type=int)
-    parser.add_argument("--batch_size", default=16, type=str)
+    parser.add_argument("--epochs", default=5, type=int)
+    parser.add_argument("--batch_size", default=12
+                        , type=int)
     parser.add_argument("--lr", default=5e-7, type=float)
     parser.add_argument("--wandb", action="store_true")
-    parser.add_argument("--pretrain_model_path", default="pretrain_model.pth", type=str)
-    parser.add_argument("--data_jsonl_path",default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/test_sft.jsonl",  type=str)
+    parser.add_argument("--data_jsonl_path",default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/test_pretrain.jsonl",  type=str)
     parser.add_argument("--vocab_dict_path", default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json", type=str)
     parser.add_argument("--model_save_dir", default="saved_sft_model", type=str)
-    parser.add_argument("--load_model_path", default="pretrain_model.pth", type=str)
+    parser.add_argument("--load_model_path", default="/home/kkyyxhll/Projects/PythonProjects/MiniKL/saved_pretrain_model/pretrain_model_5999.pth", type=str)
     parser.add_argument("--wandb_entity", default="loukang", type=str)
     parser.add_argument("--wandb_project", default="test", type=str)
     args = parser.parse_args()
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     # load model
     model_config = MiniKLConfig(vocab_size=vocab_size, )
     model = MiniKLModel(model_config).to(device)
-    if os.path.exists(args.pretrain_model_path):
+    if os.path.exists(args.load_model_path):
         print(f"Loading Pretrain Model .......")
         print(f"Pretrain_model_path:{args.load_model_path}")
         model.load_state_dict(torch.load(args.load_model_path))
@@ -102,7 +102,8 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss(reduction="none")
     scaler = torch.amp.GradScaler()
 
-    dataset = SFTDataset(tokenizer, args.data_jsonl_path)
+    #dataset = SFTDataset(tokenizer, args.data_jsonl_path)
+    dataset = PretrainDataset(tokenizer, args.data_jsonl_path)
     sampler = torch.utils.data.distributed.DistributedSampler(dataset)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, sampler=sampler)
 
