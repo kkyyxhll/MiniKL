@@ -58,8 +58,7 @@ class SFTDataset(Dataset):
     """
 
     def __init__(self, tokenizer, data_jsonl_path="/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/test_sft.jsonl"):
-        prompt = ("<|user|>{user_content}</s>\n"
-                  "<|assistant|>{assistant_content}</s>")
+
         self.tokenizer = tokenizer
         self.tokens_masks_list = self._init_tokens_masks_list(data_jsonl_path)
 
@@ -76,6 +75,7 @@ class SFTDataset(Dataset):
                         role = conversation["role"]
                         content = conversation["content"]
                         prompt += f"<|{role}|>{content}</s>\n"
+
 
                     tokens = self.tokenizer.tokenize(prompt)[0]
 
@@ -136,6 +136,6 @@ def pretrain():
 
 
 if __name__ == "__main__":
-    pretrain()
+    test_sft()
 
 

@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 import shutil
 
 from models import MiniKLModel, MiniKLConfig
-from dataset import SFTDataset, PretrainDataset
+from dataset import SFTDataset
 from tokenizer import BaseTokenizer, TokenizerConfig
 
 import warnings
@@ -15,7 +15,6 @@ import torch.optim as optim
 
 from torch.utils.data import DataLoader
 import torch.distributed as dist
-
 
 import math
 
@@ -49,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_jsonl_path",default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/data/test_pretrain.jsonl",  type=str)
     parser.add_argument("--vocab_dict_path", default=r"/home/kkyyxhll/Projects/PythonProjects/MiniKL/tokenizer/out_dir/vocab_dict.json", type=str)
     parser.add_argument("--model_save_dir", default="saved_sft_model", type=str)
-    parser.add_argument("--load_model_path", default="/home/kkyyxhll/Projects/PythonProjects/MiniKL/saved_pretrain_model/pretrain_model_5999.pth", type=str)
+    parser.add_argument("--load_model_path", default="/home/kkyyxhll/Projects/PythonProjects/MiniKL/saved_pretrain_model/pretrain_model.pth", type=str)
     parser.add_argument("--wandb_entity", default="loukang", type=str)
     parser.add_argument("--wandb_project", default="test", type=str)
     args = parser.parse_args()
@@ -102,8 +101,8 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss(reduction="none")
     scaler = torch.amp.GradScaler()
 
-    #dataset = SFTDataset(tokenizer, args.data_jsonl_path)
-    dataset = PretrainDataset(tokenizer, args.data_jsonl_path)
+    dataset = SFTDataset(tokenizer, args.data_jsonl_path)
+
     sampler = torch.utils.data.distributed.DistributedSampler(dataset)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, sampler=sampler)
 
