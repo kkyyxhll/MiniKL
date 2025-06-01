@@ -1,6 +1,0 @@
-{"time":"2025-05-31T15:28:25.508968162+08:00","level":"INFO","msg":"main: starting server","port-filename":"/tmp/tmpugse4oq9/port-7791.txt","pid":7791,"log-level":0,"disable-analytics":false,"shutdown-on-parent-exit":false,"enable-dcgm-profiling":false}
-{"time":"2025-05-31T15:28:25.510535349+08:00","level":"INFO","msg":"Will exit if parent process dies.","ppid":7791}
-{"time":"2025-05-31T15:28:25.510503658+08:00","level":"INFO","msg":"server is running","addr":{"IP":"127.0.0.1","Port":42281,"Zone":""}}
-{"time":"2025-05-31T15:28:25.694682251+08:00","level":"INFO","msg":"connection: ManageConnectionData: new connection created","id":"127.0.0.1:48606"}
-{"time":"2025-05-31T15:28:25.703176586+08:00","level":"INFO","msg":"handleInformInit: received","streamId":"jkrmgani","id":"127.0.0.1:48606"}
-{"time":"2025-05-31T15:28:25.91959836+08:00","level":"INFO","msg":"handleInformInit: stream started","streamId":"jkrmgani","id":"127.0.0.1:48606"}
