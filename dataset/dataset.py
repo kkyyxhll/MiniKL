@@ -110,15 +110,81 @@ class SFTDataset(Dataset):
     def __len__(self):
         return len(self.tokens_masks_list)
 
-class DPODataset(Dataset):
-    def __init__(self):
-        pass
 
-    def __getitem__(self, idx):
-        pass
+class DPODataset(Dataset):
+    """
+    DPO偏好数据集
+    数据格式示例:
+    {
+        "prompt": "解释量子计算的基本概念",
+        "chosen": "量子计算利用量子比特...",
+        "rejected": "量子计算就是快的计算..."
+    }
+    """
+
+    def __init__(self, tokenizer, data_jsonl_path):
+        self.tokenizer = tokenizer
+        self.dataset = self._init_dataset(data_jsonl_path)
+
+    def _init_dataset(self, data_jsonl_path):
+        print(f"开始载入DPO数据集, 路径: {data_jsonl_path}")
+        start_time = time.time()
+        dataset = []
+        pad_id = self.tokenizer.vocab_dict["<pad>"]
+
+        with open(data_jsonl_path, "r", encoding="utf-8") as f:
+            with tqdm(f, desc="处理DPO数据", unit="行") as pbar:
+                for line in pbar:
+                    data = json.loads(line)
+                    prompt = data["prompt"]
+                    chosen = data["chosen"]
+                    rejected = data["rejected"]
+
+                    # 构建完整序列
+                    chosen_seq = f"<|user|>{prompt}</s>\n<|assistant|>{chosen}</s>"
+                    rejected_seq = f"<|user|>{prompt}</s>\n<|assistant|>{rejected}</s>"
+
+                    # Tokenize序列
+                    chosen_tokens = self.tokenizer.tokenize(chosen_seq)[0]
+                    rejected_tokens = self.tokenizer.tokenize(rejected_seq)[0]
+
+                    # 截断过长的序列
+                    max_len = self.tokenizer.max_seq_len
+                    chosen_tokens = chosen_tokens[:max_len]
+                    rejected_tokens = rejected_tokens[:max_len]
+
+                    # 创建padding mask (1=真实token, 0=padding)
+                    chosen_mask = [1] * len(chosen_tokens)
+                    rejected_mask = [1] * len(rejected_tokens)
+
+                    # 填充到最大长度
+                    chosen_tokens += [pad_id] * (max_len - len(chosen_tokens))
+                    chosen_mask += [0] * (max_len - len(chosen_mask))
+
+                    rejected_tokens += [pad_id] * (max_len - len(rejected_tokens))
+                    rejected_mask += [0] * (max_len - len(rejected_mask))
+
+                    dataset.append({
+                        "chosen_tokens": chosen_tokens,
+                        "rejected_tokens": rejected_tokens,
+                        "chosen_mask": chosen_mask,
+                        "rejected_mask": rejected_mask
+                    })
+
+        print(f"DPO数据集载入完成, 耗时: {time.time() - start_time:.2f}秒, 样本数: {len(dataset)}")
+        return dataset
+
+    def __getitem__(self, index):
+        item = self.dataset[index]
+        return (
+            torch.tensor(item["chosen_tokens"], dtype=torch.long),
+            torch.tensor(item["rejected_tokens"], dtype=torch.long),
+            torch.tensor(item["chosen_mask"], dtype=torch.long),
+            torch.tensor(item["rejected_mask"], dtype=torch.long)
+        )
 
     def __len__(self):
-        pass 
+        return len(self.dataset)
 
 def test_sft():
     from tokenizer import BaseTokenizer, TokenizerConfig
