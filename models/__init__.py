@@ -1,1 +1,1 @@
-from .model_minikl import MiniKLModel, MiniKLConfig
+from .model_minikl import MiniKLModel, MiniKLConfig, MiniKLBlock

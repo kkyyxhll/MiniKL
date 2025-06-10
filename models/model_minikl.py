@@ -4,70 +4,72 @@ import torch.nn.functional as F
 
 import math
 
+
+
 class MiniKLConfig:
     def __init__(self,
                  max_seq_len: int = 32 * 1024,  # RoPE预设的最大序列长度
                  d_model: int = 512,  # 模型隐层维度
-                 base: float = float(1e6),  # RoPE base
+                 theta: float = float(1e6),  # RoPE base
                  num_heads: int = 8,  # attention层头数
-                 g: int = 2,  # g=1 MQA 1<g<num_heads GQA g=num_heads MHA
+                 g: int = 8,  # g=1 MQA 1<g<num_heads GQA g=num_heads MHA
                  ffn: str = "GLU",  # "GLU" | "FFN" FFN为标准Transformer的FFN， GLU为门控线性单元，默认GLU。
-                 num_layers: int = 10,
+                 num_layers: int = 4,
                  flag_kv_cache: bool = False,  # 是否推理
                  vocab_size: int = 5000,
+                 is_nested: bool = False, # 是否使用嵌套张量
                  ):
+        assert is_nested==False or (is_nested==True and num_heads == g) # is_nested 目前只支持 MHA,暂不支持 GQA
         self.max_seq_len = max_seq_len
         self.d_model = d_model
-        self.base = base
+        self.theta = theta
         self.num_heads = num_heads
         self.d_head = d_model // num_heads
         self.g = g
         self.ffn = ffn
         self.num_layers = num_layers
         self.vocab_size = vocab_size
-
+        self.is_nested = is_nested
         assert num_heads % g == 0
         assert ffn == "GLU" or ffn == "FFN"
 
 
 class RoPE(nn.Module):
-    def __init__(self, config:  MiniKLConfig):
-        super(RoPE, self).__init__()
-        self.d_model = config.d_head
-        self.base = config.base
+    def __init__(self, config:MiniKLConfig):
+        super().__init__()
+        self.theta = config.theta
         self.max_seq_len = config.max_seq_len
-        self._pre_sin_cos_rope()
-
-    def _pre_sin_cos_rope(self, ):
-        d_model = self.d_model
-        base = self.base
-        max_seq_len = self.max_seq_len
-
-        pos = torch.arange(max_seq_len).unsqueeze(-1)
-        i = torch.arange(d_model // 2)
-        omega = torch.exp(- 2 * i / d_model * math.log(base))
-
-        rope_sin = torch.sin(pos * omega).repeat_interleave(2, dim=-1)
-        rope_cos = torch.cos(pos * omega).repeat_interleave(2, dim=-1)
-
-        self.register_buffer('rope_sin', rope_sin)
-        self.register_buffer('rope_cos', rope_cos)
-
+        self.d_model = config.d_head
+        self._pre_cal()
+    def _pre_cal(self):
+        pos = torch.arange(self.max_seq_len).unsqueeze(-1) #(max_seq_len, 1)
+        i = torch.arange(self.d_model//2)
+        omega = torch.exp(- 2 * i / self.d_model * math.log(self.theta)) #(d_model//2)
+        rope_sin = torch.sin(pos * omega).repeat_interleave(2, -1)
+        rope_cos = torch.cos(pos * omega).repeat_interleave(2, -1)
+        self.register_buffer("rope_sin", rope_sin)
+        self.register_buffer("rope_cos", rope_cos)
     def forward(self, x):
         """
-        :param x: (batch_size, seq_len, d_model)
-        :return: batch_size, seq_len, d_model/2, 2
+            x:(batch_size, num_head, seq_len, d_head) | (batch_size, num_head, seq_len*, d_head)
         """
+        if type(x) == torch.Tensor:# norm tensor
+            return (x * self.rope_cos[:x.size(-2), :] +
+                    torch.stack([x[..., 1::2], -x[..., 0::2]], dim=-1).flatten(-2, -1) * self.rope_sin[:x.size(-2), :])
+        else : # torch.nested.nested_tensor
+            values = torch.rand(x.size(1), 0, x.size(-1)).to(x.device)
+            for nt in x:
+                rope_nt = nt * self.rope_cos[:nt.size(-2), :] + torch.stack([nt[..., 1::2], -nt[..., 0::2]], dim=-1).flatten(-2, -1)*self.rope_sin[:nt.size(-2),:]
+                values = torch.cat([values, rope_nt], dim=-2)
+            output = torch.nested.nested_tensor_from_jagged(values=values, offsets=x.offsets(), jagged_dim=2)
 
-        seq_len  = x.size(-2)
-        cos_x = x
-        sin_x = torch.stack([-x[..., 1::2], x[..., 0::2]], dim=-1).flatten(-2)
-        return cos_x * self.rope_cos[:seq_len, :] + sin_x * self.rope_sin[:seq_len, :]
+            return output
 
 
 class Attention(nn.Module):
     def __init__(self, config:  MiniKLConfig):
         super(Attention, self).__init__()
+        self.is_nested = config.is_nested
         self.d_model = config.d_model
         self.num_heads = config.num_heads
         self.d_head = config.d_head
@@ -93,18 +95,19 @@ class Attention(nn.Module):
         # q = self.rope(q)
         # k = self.rope(k)
         #
-        #
-        #
         # attention_score = q @ k.transpose(-2, -1)
         # if masked is not None:
         #     attention_score.masked_fill_(masked, float("-inf"))
         # attention = F.softmax(attention_score / math.sqrt(self.d_head), dim=-1) @ v
         # attention = self._reduce(attention)
         q = self.w_q(x).unflatten(-1, [self.num_heads, self.d_head]).transpose(1, 2)
-        k = self.w_k(x).unflatten(-1, [self.g, self.d_head]).transpose(1, 2).repeat_interleave(self.num_heads//self.g, 1)
-        v = self.w_v(x).unflatten(-1, [self.g, self.d_head]).transpose(1, 2).repeat_interleave(self.num_heads//self.g, 1)
-
-
+        q = self.rope(q)
+        k = self.w_k(x).unflatten(-1, [self.g, self.d_head]).transpose(1, 2)
+        k = self.rope(q)
+        v = self.w_v(x).unflatten(-1, [self.g, self.d_head]).transpose(1, 2)
+        if not self.is_nested:
+            k = k.repeat_interleave(self.num_heads//self.g, 1)
+            v = v.repeat_interleave(self.num_heads//self.g, 1)
         attention = F.scaled_dot_product_attention(q, k, v, is_causal=True).transpose(1, 2).flatten(-2, -1)
 
         attention = self.w_o(attention)
@@ -185,8 +188,8 @@ class MiniKLBlock(nn.Module):
             self.ffn = GLU(config=config)
         elif config.ffn == "FFN":
             self.ffn = FFN(config=config)
-        self.norm1 = nn.LayerNorm(self.d_model)
-        self.norm2 = nn.LayerNorm(self.d_model)
+        self.norm1 = nn.RMSNorm(self.d_model)
+        self.norm2 = nn.RMSNorm(self.d_model)
 
     def forward(self, x, masked=None):
         x = x + self.attention(self.norm1(x), masked=masked)
@@ -219,3 +222,5 @@ class MiniKLModel(nn.Module):
         output = self.fc(x)
 
         return output
+
+
